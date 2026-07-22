@@ -1,0 +1,36 @@
+services:
+  portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: eap-tls-cert-portal:local
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env.production
+    environment:
+      APP_ENV: production
+      BIND_ADDR: 0.0.0.0:3000
+      STEP_BINARY: /usr/local/bin/step
+      STEP_CA_ROOT: /run/config/root_ca.crt
+      STEP_CA_PROVISIONER_PASSWORD_FILE: /run/secrets/step_ca_provisioner_password
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - type: bind
+        source: ${STEP_CA_ROOT_HOST_PATH:?set STEP_CA_ROOT_HOST_PATH}
+        target: /run/config/root_ca.crt
+        read_only: true
+    secrets:
+      - step_ca_provisioner_password
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+
+secrets:
+  step_ca_provisioner_password:
+    file: ${STEP_CA_PROVISIONER_PASSWORD_HOST_PATH:?set STEP_CA_PROVISIONER_PASSWORD_HOST_PATH}

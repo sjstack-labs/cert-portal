@@ -1,0 +1,13 @@
+/target
+.env
+.env.*
+!.env.*.example
+
+# IDE and local build state
+.idea/
+
+# CA/provisioner secrets must never be committed.
+ca_key.pem
+*.key
+*password*
+!*.example

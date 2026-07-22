@@ -1,0 +1,16 @@
+[package]
+name = "eap-tls-cert-portal"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+jsonwebtoken = "9"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+rcgen = { version = "0.13", features = ["x509-parser"] }
+tower-http = { version = "0.6", features = ["fs"] }
+tempfile = "3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
