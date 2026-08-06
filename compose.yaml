@@ -14,6 +14,8 @@ services:
       STEP_BINARY: /usr/local/bin/step
       STEP_CA_ROOT: /run/config/root_ca.crt
       STEP_CA_PROVISIONER_PASSWORD_FILE: /run/secrets/step_ca_provisioner_password
+      VPN_STEP_CA_ROOT: /run/config/vpn_root_ca.crt
+      VPN_STEP_CA_PROVISIONER_PASSWORD_FILE: /run/secrets/vpn_step_ca_provisioner_password
     ports:
       - "127.0.0.1:3000:3000"
     volumes:
@@ -21,8 +23,13 @@ services:
         source: ${STEP_CA_ROOT_HOST_PATH:?set STEP_CA_ROOT_HOST_PATH}
         target: /run/config/root_ca.crt
         read_only: true
+      - type: bind
+        source: ${VPN_STEP_CA_ROOT_HOST_PATH:?set VPN_STEP_CA_ROOT_HOST_PATH}
+        target: /run/config/vpn_root_ca.crt
+        read_only: true
     secrets:
       - step_ca_provisioner_password
+      - vpn_step_ca_provisioner_password
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -34,3 +41,5 @@ services:
 secrets:
   step_ca_provisioner_password:
     file: ${STEP_CA_PROVISIONER_PASSWORD_HOST_PATH:?set STEP_CA_PROVISIONER_PASSWORD_HOST_PATH}
+  vpn_step_ca_provisioner_password:
+    file: ${VPN_STEP_CA_PROVISIONER_PASSWORD_HOST_PATH:?set VPN_STEP_CA_PROVISIONER_PASSWORD_HOST_PATH}

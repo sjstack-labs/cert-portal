@@ -5,7 +5,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 RUN cargo build --locked --release
 
-FROM smallstep/step-cli:bullseye-0.30.2 AS step-cli
+FROM smallstep/step-cli:0.30.2 AS step-cli
 
 FROM debian:bookworm-slim AS runtime
 

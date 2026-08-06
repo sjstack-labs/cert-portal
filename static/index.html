@@ -5,52 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>인증서 발급 센터</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f7f6; }
-        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h1 { font-size: 1.5rem; margin-bottom: 1.5rem; color: #333; }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; color: #666; }
-        input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 0.75rem; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-        button:hover { background-color: #0056b3; }
-        #status { margin-top: 1rem; font-size: 0.9rem; text-align: center; }
+        :root { color-scheme: light; font-family: Pretendard, "Noto Sans KR", system-ui, sans-serif; color: #172033; background: #f3f6fb; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; padding: 48px 20px; }
+        main { width: 100%; max-width: 720px; margin: 0 auto; }
+        header { margin-bottom: 24px; }
+        h1 { margin: 0 0 10px; font-size: clamp(1.75rem, 5vw, 2.35rem); letter-spacing: -.04em; }
+        header p, .description { color: #647087; line-height: 1.65; }
+        .steps { display: grid; gap: 16px; }
+        .card { background: #fff; padding: 26px; border: 1px solid #e1e7f0; border-radius: 16px; box-shadow: 0 10px 30px rgba(30, 50, 80, .06); }
+        .step-title { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .number { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 auto; border-radius: 50%; color: #fff; background: #2457d6; font-weight: 700; }
+        h2 { margin: 0; font-size: 1.15rem; }
+        .description { margin: 0 0 20px 42px; font-size: .94rem; }
+        .form-group { margin: 0 0 16px 42px; }
+        label { display: block; margin-bottom: 7px; font-size: .92rem; font-weight: 650; }
+        input { width: 100%; padding: 12px 13px; border: 1px solid #cbd4e2; border-radius: 8px; font: inherit; }
+        input:focus { outline: 3px solid rgba(36, 87, 214, .15); border-color: #2457d6; }
+        .password-row { position: relative; }
+        .password-row input { padding-right: 68px; }
+        .toggle { position: absolute; right: 8px; top: 7px; width: auto; padding: 6px 8px; color: #44516a; background: transparent; font-size: .84rem; }
+        button, .button { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+        .primary { width: calc(100% - 42px); margin-left: 42px; color: #fff; background: #2457d6; }
+        .secondary { margin-left: 42px; color: #2149ad; background: #edf3ff; border: 1px solid #cbd9fa; }
+        button:hover, .button:hover { filter: brightness(.96); }
+        button:disabled { cursor: wait; opacity: .65; }
+        .status { min-height: 22px; margin: 14px 0 0 42px; font-size: .9rem; line-height: 1.5; }
+        .notice { margin-top: 18px; padding: 14px 16px; border-radius: 10px; color: #5c4a18; background: #fff8df; font-size: .88rem; line-height: 1.55; }
+        @media (max-width: 520px) { body { padding: 28px 14px; } .card { padding: 22px 18px; } .description, .form-group, .status { margin-left: 0; } .primary { width: 100%; margin-left: 0; } .secondary { margin-left: 0; width: 100%; } }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>인증서 발급 요청</h1>
-        <div class="form-group">
-            <label for="commonName">기기 이름 (Common Name)</label>
-            <input type="text" id="commonName" placeholder="예: my-device-01">
-        </div>
-        <div class="form-group">
-            <label for="p12Password">인증서 가져오기 비밀번호 (8자 이상)</label>
-            <input type="password" id="p12Password" minlength="8" maxlength="128" autocomplete="new-password">
-        </div>
-        <button onclick="requestCertificate()">인증서 발급 및 다운로드</button>
-        <div id="status"></div>
+<main>
+    <header>
+        <h1>인증서 발급 센터</h1>
+        <p>사용하려는 네트워크에 맞는 인증서를 선택하세요. WPA3와 VPN 인증서는 서로 독립적으로 발급됩니다.</p>
+    </header>
+    <div class="steps">
+        <section class="card" aria-labelledby="wpa3-title">
+            <div class="step-title"><span class="number">W</span><h2 id="wpa3-title">WPA3 인증서 발급</h2></div>
+            <p class="description">WPA3 Enterprise 네트워크 접속에 사용할 기기 인증서를 발급합니다.</p>
+            <form class="certificate-form" data-endpoint="/api/request-cert" data-prefix="">
+                <div class="form-group">
+                    <label>기기 이름
+                        <input name="commonName" type="text" placeholder="예: notebook-01" maxlength="253" pattern="[A-Za-z0-9.-]+" autocomplete="off" required>
+                    </label>
+                    <small>영문자, 숫자, 점, 하이픈만 사용할 수 있습니다.</small>
+                </div>
+                <div class="form-group">
+                    <label>인증서 가져오기 비밀번호</label>
+                    <div class="password-row">
+                        <input name="p12Password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+                        <button class="toggle" type="button" aria-label="비밀번호 표시">표시</button>
+                    </div>
+                    <small>8~128자. 파일 설치 시 다시 필요합니다.</small>
+                </div>
+                <button class="primary issue-button" type="submit">WPA3 PFX 발급 및 다운로드</button>
+            </form>
+            <div class="status" role="status" aria-live="polite"></div>
+        </section>
+        <section class="card" aria-labelledby="vpn-title">
+            <div class="step-title"><span class="number">V</span><h2 id="vpn-title">VPN 인증서 발급</h2></div>
+            <p class="description">먼저 VPN CA를 신뢰 저장소에 설치한 다음, VPN 전용 기기 인증서를 발급하세요.</p>
+            <a class="button secondary" href="/api/vpn/ca-certificate" download="vpn-ca-certificate.crt">VPN CA 다운로드 (.crt)</a>
+            <form class="certificate-form" data-endpoint="/api/vpn/request-cert" data-prefix="vpn-" style="margin-top:20px">
+                <div class="form-group">
+                    <label>기기 이름
+                        <input name="commonName" type="text" placeholder="예: vpn-notebook-01" maxlength="253" pattern="[A-Za-z0-9.-]+" autocomplete="off" required>
+                    </label>
+                    <small>영문자, 숫자, 점, 하이픈만 사용할 수 있습니다.</small>
+                </div>
+                <div class="form-group">
+                    <label>인증서 가져오기 비밀번호</label>
+                    <div class="password-row">
+                        <input name="p12Password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+                        <button class="toggle" type="button" aria-label="비밀번호 표시">표시</button>
+                    </div>
+                    <small>8~128자. 파일 설치 시 다시 필요합니다.</small>
+                </div>
+                <button class="primary issue-button" type="submit">VPN PFX 발급 및 다운로드</button>
+            </form>
+            <div class="status" role="status" aria-live="polite"></div>
+            <div class="notice">비밀번호와 다운로드한 PFX 파일을 함께 공유하지 마세요. PFX에는 이 기기의 개인키가 포함됩니다.</div>
+        </section>
     </div>
+</main>
 
     <script>
-        async function requestCertificate() {
-            const commonName = document.getElementById('commonName').value;
-            const p12Password = document.getElementById('p12Password').value;
-            const statusDiv = document.getElementById('status');
+        document.querySelectorAll('.password-row').forEach((row) => {
+            const input = row.querySelector('input');
+            const toggle = row.querySelector('.toggle');
+            toggle.addEventListener('click', () => {
+                const showing = input.type === 'text';
+                input.type = showing ? 'password' : 'text';
+                toggle.textContent = showing ? '표시' : '숨김';
+                toggle.setAttribute('aria-label', showing ? '비밀번호 표시' : '비밀번호 숨김');
+            });
+        });
 
-            if (!commonName) {
-                alert("기기 이름을 입력해주세요.");
-                return;
-            }
-            if (p12Password.length < 8 || p12Password.length > 128) {
-                alert("인증서 가져오기 비밀번호를 8~128자로 입력해주세요.");
-                return;
-            }
+        document.querySelectorAll('.certificate-form').forEach((form) => form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const commonName = form.elements.commonName.value;
+            const p12Password = form.elements.p12Password.value;
+            const statusDiv = form.nextElementSibling;
+            const issueButton = form.querySelector('.issue-button');
 
-            statusDiv.innerText = "step-ca에 인증서 발급 요청 중...";
-            statusDiv.style.color = "blue";
+            statusDiv.textContent = "step-ca에 인증서 발급 요청 중…";
+            statusDiv.style.color = "#2457d6";
+            issueButton.disabled = true;
 
             try {
-                const response = await fetch('/api/request-cert', {
+                const response = await fetch(form.dataset.endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ common_name: commonName, p12_password: p12Password })
@@ -61,22 +126,25 @@
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `${commonName.replace(/\s+/g, '_')}.pfx`;
+                    a.download = `${form.dataset.prefix}${commonName.replace(/\s+/g, '_')}.pfx`;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
-                    statusDiv.innerText = "발급 완료! Windows/Android용 PFX 다운로드가 시작되었습니다.";
-                    statusDiv.style.color = "green";
+                    window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                    statusDiv.textContent = "발급 완료. PFX 다운로드가 시작되었습니다. 입력한 비밀번호로 설치하세요.";
+                    statusDiv.style.color = "#14733b";
                 } else {
                     const errorText = await response.text();
-                    statusDiv.innerText = `실패: ${errorText}`;
-                    statusDiv.style.color = "red";
+                    statusDiv.textContent = `발급 실패: ${errorText}`;
+                    statusDiv.style.color = "#b42318";
                 }
             } catch (error) {
-                statusDiv.innerText = `오류 발생: ${error.message}`;
-                statusDiv.style.color = "red";
+                statusDiv.textContent = `통신 오류: ${error.message}`;
+                statusDiv.style.color = "#b42318";
+            } finally {
+                issueButton.disabled = false;
             }
-        }
+        }));
     </script>
 </body>
 </html>
