@@ -1,0 +1,9 @@
+services:
+  portal:
+    env_file: !override
+      - .env.development
+    environment:
+      APP_ENV: development
+      BIND_ADDR: 0.0.0.0:3000
+      CONTAINERIZED_DEVELOPMENT: "true"
+
