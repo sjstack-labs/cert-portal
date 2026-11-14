@@ -1,0 +1,11 @@
+# gitleaks 설정: 기본 규칙을 그대로 쓰고, 문서의 자리표시자 값만 예외로 둡니다.
+# 예외를 추가할 때는 실제 비밀값이 아니라는 근거를 description에 남깁니다.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "README 예시의 Cloudflare Access Audience 자리표시자(0~f 반복, 실제 값 아님)"
+regexes = [
+  '''0123456789abcdef0123456789abcdef''',
+]

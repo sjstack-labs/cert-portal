@@ -6,6 +6,8 @@ services:
     image: eap-tls-cert-portal:local
     restart: unless-stopped
     init: true
+    # 진행 중인 발급(STEP_TIMEOUT_SECS 기본 30초)이 끝날 때까지 종료를 기다립니다.
+    stop_grace_period: 45s
     env_file:
       - .env.production
     environment:

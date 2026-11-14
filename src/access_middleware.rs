@@ -1,3 +1,5 @@
+//! 모든 요청에 인증을 강제하는 미들웨어. 인증에 성공하면 `AuthenticatedUser`를 요청에 넣습니다.
+
 use crate::{auth::AuthenticatedUser, state::AppState};
 use axum::{
     body::Body,

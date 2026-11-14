@@ -1,3 +1,5 @@
+//! 인증 방식: 운영은 Cloudflare Access JWT 검증, 개발은 loopback 전용 우회.
+
 use crate::config::required_env;
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header, jwk::JwkSet};
 use serde::Deserialize;
@@ -17,6 +19,22 @@ impl Authentication {
         Ok(Self {
             mode: AuthenticationMode::Cloudflare(Box::new(AccessJwtValidator::from_env().await?)),
         })
+    }
+
+    /// 테스트용 Cloudflare 검증기. 주어진 키 목록만 사용하고 공개 키를 다시 받지 않습니다.
+    #[cfg(test)]
+    pub(crate) fn cloudflare_for_tests(issuer: &str, audience: &str, jwks: JwkSet) -> Self {
+        Self {
+            mode: AuthenticationMode::Cloudflare(Box::new(AccessJwtValidator {
+                issuer: issuer.to_string(),
+                audience: audience.to_string(),
+                certs_url: format!("{issuer}/cdn-cgi/access/certs"),
+                client: reqwest::Client::new(),
+                jwks: RwLock::new(jwks),
+                // 방금 갱신한 것으로 두어 테스트 중 네트워크 요청이 일어나지 않게 합니다.
+                last_refresh: Mutex::new(tokio::time::Instant::now()),
+            })),
+        }
     }
 
     pub(crate) fn local_development(allow_non_loopback: bool) -> Self {
