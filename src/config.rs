@@ -1,4 +1,9 @@
-use std::{net::SocketAddr, path::PathBuf};
+//! 환경 변수에서 실행 설정을 읽고 시작 시점에 검증합니다.
+
+use std::{net::SocketAddr, path::PathBuf, time::Duration};
+
+const DEFAULT_STEP_TIMEOUT_SECS: u64 = 30;
+const DEFAULT_MAX_CONCURRENT_ISSUANCES: usize = 4;
 
 #[derive(Clone)]
 pub(crate) struct CaConfig {
@@ -15,6 +20,10 @@ pub(crate) struct AppConfig {
     pub(crate) wpa3_ca: CaConfig,
     pub(crate) vpn_ca: CaConfig,
     pub(crate) trust_forwarded_for: bool,
+    /// `step` 명령 하나가 끝나야 하는 시간입니다. 넘기면 프로세스를 종료합니다.
+    pub(crate) step_timeout: Duration,
+    /// 동시에 진행할 수 있는 발급 요청 수입니다. 넘치는 요청은 `503`을 받습니다.
+    pub(crate) max_concurrent_issuances: usize,
 }
 
 impl AppConfig {
@@ -33,6 +42,16 @@ impl AppConfig {
             wpa3_ca,
             vpn_ca,
             trust_forwarded_for: env_flag("TRUST_FORWARDED_FOR"),
+            step_timeout: Duration::from_secs(env_number(
+                "STEP_TIMEOUT_SECS",
+                DEFAULT_STEP_TIMEOUT_SECS,
+                1..=300,
+            )?),
+            max_concurrent_issuances: env_number(
+                "MAX_CONCURRENT_ISSUANCES",
+                DEFAULT_MAX_CONCURRENT_ISSUANCES,
+                1..=64,
+            )?,
         })
     }
 
@@ -95,6 +114,27 @@ fn env_flag(name: &str) -> bool {
     std::env::var(name)
         .map(|value| matches!(value.to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
         .unwrap_or(false)
+}
+
+fn env_number<T>(name: &str, default: T, range: std::ops::RangeInclusive<T>) -> Result<T, String>
+where
+    T: std::str::FromStr + PartialOrd + std::fmt::Display + Copy,
+{
+    let Ok(raw) = std::env::var(name) else {
+        return Ok(default);
+    };
+    let value = raw
+        .trim()
+        .parse::<T>()
+        .map_err(|_| format!("{name}는 숫자여야 합니다: {raw}"))?;
+    if !range.contains(&value) {
+        return Err(format!(
+            "{name}는 {}~{} 범위여야 합니다: {value}",
+            range.start(),
+            range.end()
+        ));
+    }
+    Ok(value)
 }
 
 pub(crate) fn required_env(name: &str) -> Result<String, String> {

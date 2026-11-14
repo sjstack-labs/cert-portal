@@ -1,9 +1,14 @@
+//! EAP-TLS Certificate Portal: WPA3와 VPN 클라이언트 인증서를 `step-ca`로 발급해 PFX로
+//! 내려주는 서버입니다. 보안 불변식은 `docs/security-model.md`를 참고하세요.
+
 mod access_middleware;
 mod auth;
 mod certificate;
 mod config;
 mod error;
 mod handlers;
+#[cfg(test)]
+mod router_tests;
 mod state;
 
 use crate::{
@@ -65,11 +70,43 @@ async fn main() {
         listener,
         app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
+    .with_graceful_shutdown(shutdown_signal())
     .await
     .unwrap_or_else(|error| {
         tracing::error!(error = %error, "server_failed");
         std::process::exit(1);
     });
+}
+
+/// SIGINT 또는 SIGTERM을 받으면 새 연결을 받지 않고 진행 중인 요청이 끝나기를 기다립니다.
+async fn shutdown_signal() {
+    let interrupt = async {
+        if let Err(error) = tokio::signal::ctrl_c().await {
+            tracing::error!(error = %error, "interrupt_signal_handler_failed");
+            std::future::pending::<()>().await;
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+            Ok(mut signal) => {
+                signal.recv().await;
+            }
+            Err(error) => {
+                tracing::error!(error = %error, "terminate_signal_handler_failed");
+                std::future::pending::<()>().await;
+            }
+        }
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = interrupt => {}
+        () = terminate => {}
+    }
+    tracing::info!("shutdown_started");
 }
 
 fn configuration_error(error: String) -> ! {
