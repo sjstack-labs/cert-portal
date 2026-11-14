@@ -30,8 +30,10 @@
 
         <section id="vpn-ca-step" class="step" hidden>
             <h2>2. VPN CA 설치</h2>
-            <p>VPN 인증서를 쓰려면 먼저 VPN CA를 기기의 신뢰할 수 있는 인증서로 설치해야 합니다. 이미 설치했다면 건너뛰세요.</p>
-            <a class="button secondary" href="/api/vpn/ca-certificate" download="vpn-ca-certificate.crt">VPN CA 다운로드 (.crt)</a>
+            <div class="step-row">
+                <p>VPN CA를 기기의 신뢰할 수 있는 인증서로 먼저 설치하세요. 이미 설치했다면 건너뛰세요.</p>
+                <a class="button secondary" href="/api/vpn/ca-certificate" download="vpn-ca-certificate.crt">VPN CA 다운로드</a>
+            </div>
         </section>
 
         <section id="details-step" class="step" hidden>
@@ -45,23 +47,26 @@
                 <small id="common-name-hint">영문자, 숫자, 점, 하이픈만 사용할 수 있습니다.</small>
             </div>
 
-            <div class="form-group">
-                <label for="p12-password">인증서 가져오기 비밀번호</label>
-                <div class="password-row">
-                    <input id="p12-password" name="p12Password" type="password" minlength="8" maxlength="128"
-                           autocomplete="new-password" required aria-describedby="p12-password-hint">
-                    <button class="toggle" type="button" aria-controls="p12-password">표시</button>
+            <div class="password-pair">
+                <div class="form-group">
+                    <label for="p12-password">인증서 가져오기 비밀번호</label>
+                    <div class="password-row">
+                        <input id="p12-password" name="p12Password" type="password" minlength="8" maxlength="128"
+                               autocomplete="new-password" required aria-describedby="p12-password-hint">
+                        <button class="toggle" type="button" aria-controls="p12-password">표시</button>
+                    </div>
                 </div>
-                <small id="p12-password-hint">8~128자. 기기에 인증서를 설치할 때 다시 입력합니다.</small>
-            </div>
 
-            <div class="form-group">
-                <label for="p12-password-confirm">비밀번호 확인</label>
-                <div class="password-row">
-                    <input id="p12-password-confirm" name="p12PasswordConfirm" type="password" minlength="8"
-                           maxlength="128" autocomplete="new-password" required>
-                    <button class="toggle" type="button" aria-controls="p12-password-confirm">표시</button>
+                <div class="form-group">
+                    <label for="p12-password-confirm">비밀번호 확인</label>
+                    <div class="password-row">
+                        <input id="p12-password-confirm" name="p12PasswordConfirm" type="password" minlength="8"
+                               maxlength="128" autocomplete="new-password" required>
+                        <button class="toggle" type="button" aria-controls="p12-password-confirm">표시</button>
+                    </div>
                 </div>
+
+                <small id="p12-password-hint" class="pair-hint">8~128자. 기기에 인증서를 설치할 때 다시 입력합니다.</small>
             </div>
 
             <button id="issue-button" class="button primary" type="submit">인증서 발급 및 다운로드</button>

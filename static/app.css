@@ -12,32 +12,32 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; padding: 48px 20px; }
+body { margin: 0; min-height: 100vh; padding: 32px 20px; }
 main { width: 100%; max-width: 640px; margin: 0 auto; }
 [hidden] { display: none !important; }
 
-header { margin-bottom: 24px; }
+header { margin-bottom: 16px; }
 h1 { margin: 0; font-size: clamp(1.75rem, 5vw, 2.35rem); letter-spacing: -.04em; }
 .step p, small { color: var(--muted); line-height: 1.6; }
 h2 { margin: 0 0 8px; font-size: 1.05rem; }
 
 .card {
     background: #fff;
-    padding: 26px;
+    padding: 22px 24px;
     border: 1px solid #e1e7f0;
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(30, 50, 80, .06);
 }
 
 .purpose { margin: 0; padding: 0; border: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.purpose legend { grid-column: 1 / -1; padding: 0; margin-bottom: 12px; font-size: 1.05rem; font-weight: 700; }
+.purpose legend { grid-column: 1 / -1; padding: 0; margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; }
 .purpose-option {
     display: grid;
     grid-template-columns: auto 1fr;
     column-gap: 10px;
     row-gap: 2px;
     align-items: center;
-    padding: 14px;
+    padding: 12px 14px;
     border: 1px solid var(--border);
     border-radius: 12px;
     cursor: pointer;
@@ -48,15 +48,21 @@ h2 { margin: 0 0 8px; font-size: 1.05rem; }
 .purpose-title { font-weight: 700; }
 .purpose-hint { font-size: .85rem; color: var(--muted); }
 
-.step { margin-top: 24px; padding-top: 22px; border-top: 1px solid #e1e7f0; }
-.step p { margin: 0 0 14px; font-size: .94rem; }
+.step { margin-top: 18px; padding-top: 16px; border-top: 1px solid #e1e7f0; }
+.step p { margin: 0 0 12px; font-size: .94rem; }
+.step-row { display: flex; align-items: center; gap: 16px; }
+.step-row p { flex: 1; margin: 0; }
+.step-row .button { flex: none; }
 
-.form-group { margin: 0 0 16px; }
-.form-group label { display: block; margin-bottom: 7px; font-size: .92rem; font-weight: 650; }
-.form-group small { display: block; margin-top: 6px; font-size: .84rem; }
+.form-group { margin: 0 0 14px; }
+.form-group label { display: block; margin-bottom: 6px; font-size: .92rem; font-weight: 650; }
+.form-group small, .pair-hint { display: block; margin-top: 4px; font-size: .84rem; }
+.password-pair { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; margin-bottom: 16px; }
+.password-pair .form-group { margin: 0; }
+.pair-hint { grid-column: 1 / -1; }
 input[type="text"], input[type="password"] {
     width: 100%;
-    padding: 12px 13px;
+    padding: 10px 13px;
     border: 1px solid var(--border);
     border-radius: 8px;
     font: inherit;
@@ -69,7 +75,8 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .toggle {
     position: absolute;
     right: 8px;
-    top: 7px;
+    top: 50%;
+    transform: translateY(-50%);
     padding: 6px 8px;
     border: 0;
     color: #44516a;
@@ -97,7 +104,9 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .primary { width: 100%; color: #fff; background: var(--accent); }
 .secondary { color: #2149ad; background: var(--accent-soft); border: 1px solid #cbd9fa; }
 
-.status { min-height: 22px; margin-top: 14px; font-size: .9rem; line-height: 1.5; }
+.status { margin-top: 14px; font-size: .9rem; line-height: 1.5; }
+/* 비어 있을 때는 공간을 차지하지 않습니다. 스크린리더 안내를 위해 요소 자체는 남겨 둡니다. */
+.status:empty { margin-top: 0; }
 .status.pending { color: var(--accent); }
 .status.success { color: var(--success); }
 .status.error { color: var(--danger); }
@@ -116,5 +125,7 @@ input[aria-invalid="true"] { border-color: var(--danger); }
     body { padding: 28px 14px; }
     .card { padding: 22px 18px; }
     .purpose { grid-template-columns: 1fr; }
-    .secondary { width: 100%; }
+    .step-row { flex-direction: column; align-items: stretch; gap: 12px; }
+    .password-pair { grid-template-columns: 1fr; row-gap: 14px; }
+    .pair-hint { margin-top: -10px; }
 }

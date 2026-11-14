@@ -33,9 +33,25 @@ function selectedPurpose() {
     return checked ? checked.value : null;
 }
 
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function isFullyVisible(element) {
+    const rect = element.getBoundingClientRect();
+    return rect.top >= 0 && rect.bottom <= window.innerHeight;
+}
+
+// 화면 밖에 있을 때만 스크롤합니다. 이미 보이는 데스크톱에서는 화면이 움직이지 않습니다.
+function bringIntoView(element, block) {
+    if (!isFullyVisible(element)) {
+        element.scrollIntoView({ block, behavior: prefersReducedMotion.matches ? 'auto' : 'smooth' });
+    }
+}
+
 function showStatus(message, kind) {
     statusArea.textContent = message;
     statusArea.className = `status ${kind}`;
+    // 결과 안내가 화면 밖에 표시되어 사용자가 놓치는 일이 없게 합니다.
+    bringIntoView(statusArea, 'nearest');
 }
 
 function clearStatus() {
@@ -98,6 +114,8 @@ form.querySelectorAll('input[name="purpose"]').forEach((radio) => {
     radio.addEventListener('change', () => {
         applyPurpose(radio.value);
         window.history.replaceState(null, '', `#${radio.value}`);
+        // 새로 나타난 첫 단계가 화면 밖에 있을 때만 그 단계가 위쪽에 오도록 스크롤합니다.
+        bringIntoView(vpnCaStep.hidden ? detailsStep : vpnCaStep, 'start');
     });
 });
 window.addEventListener('hashchange', selectPurposeFromHash);
