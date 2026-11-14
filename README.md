@@ -46,9 +46,11 @@ PFX로 변환하는 작업을 반복해야 했습니다. 이 과정을 단순화
   다운로드합니다.
 - `POST /api/vpn/request-cert`: VPN 전용 PFX를 발급하며 `VPN_STEP_CA_*` 설정만 사용합니다.
 
-화면에서도 WPA3와 VPN 발급 기능을 독립된 카드로 제공합니다. VPN 카드에서 VPN CA
-다운로드와 VPN PFX 발급을 수행합니다. 운영 환경에서는 모든 화면과 API 요청에
-Cloudflare Access 인증을 적용하며, 인증서 응답은 캐시하지 않습니다.
+화면은 하나의 폼으로 되어 있으며, 사용자가 먼저 Wi-Fi(WPA3)와 VPN 중 용도를 고릅니다.
+기본 선택값이 없어 잘못된 용도로 발급하는 실수를 줄이고, VPN을 고르면 VPN CA 설치 단계가
+함께 표시됩니다. 주소 뒤에 `#wpa3` 또는 `#vpn`을 붙이면 해당 용도가 선택된 상태로 열립니다.
+운영 환경에서는 모든 화면과 API 요청에 Cloudflare Access 인증을 적용하며, 인증서 응답은
+캐시하지 않습니다.
 
 ## 인증서 발급 흐름
 
@@ -188,6 +190,37 @@ export CF_ACCESS_AUDIENCE=0123456789abcdef0123456789abcdef
 cargo run --release
 ```
 
+다음 값은 선택 사항이며, 지정하지 않으면 기본값을 사용합니다.
+
+| 변수 | 기본값 | 설명 |
+|---|---|---|
+| `STEP_TIMEOUT_SECS` | `30` | `step` 명령 하나가 끝나야 하는 시간(1~300초). 넘기면 프로세스를 종료하고 서명 단계는 `504`를 반환합니다. |
+| `MAX_CONCURRENT_ISSUANCES` | `4` | 동시에 진행할 수 있는 발급 수(1~64). 넘치는 요청은 기다리지 않고 `503`을 받습니다. |
+| `TRUST_FORWARDED_FOR` | 꺼짐 | [운영 감사 로그](#운영-감사-로그) 참고 |
+
+## 화면 미리보기와 테스트
+
+실제 `step-ca` 없이 화면과 발급 흐름을 확인하려면 미리보기 스크립트를 실행합니다. 가짜
+`step`이 더미 파일을 만들기 때문에 다운로드되는 PFX는 실제 인증서가 아닙니다.
+
+```sh
+scripts/dev-preview.sh                          # http://127.0.0.1:3000
+PREVIEW_STEP_MODE=fail scripts/dev-preview.sh   # CA 거부(502) 화면
+PREVIEW_STEP_MODE=slow scripts/dev-preview.sh   # 타임아웃(504) 화면
+```
+
+원격 서버에서 실행했다면 `ssh -L 3000:127.0.0.1:3000 <서버>`로 포트를 전달한 뒤 작업 PC의
+브라우저에서 엽니다.
+
+테스트는 가짜 `step` 스크립트로 인증, CA 분리, 타임아웃, 동시 발급 제한, 오류 노출 여부를
+확인합니다. 셸 스크립트를 실행하므로 Linux 또는 macOS에서 실행합니다.
+
+```sh
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
 ## Docker 개발 환경
 
 `.env.development`의 `*_HOST_PATH` 값을 실제 호스트 파일 경로로 설정한 후 개발용
@@ -236,6 +269,10 @@ Compose 프로젝트에 포함한다면 호스트 포트를 제거하고 내부 
 
 ## 보안 모델
 
+신뢰 경계와 코드가 지켜야 하는 불변식은 [`docs/security-model.md`](docs/security-model.md)에
+정리되어 있습니다. 이 포털은 Access를 통과한 사용자를 구분하지 않으므로 **Cloudflare Access
+정책이 곧 발급 권한 정책**입니다.
+
 ### Cloudflare Access 인증
 
 운영 모드의 서버는 시작 시 `${CF_ACCESS_ISSUER}/cdn-cgi/access/certs`에서 공개 키를
@@ -262,6 +299,20 @@ Root CA 또는 intermediate CA 개인키를 복사하면 안 됩니다.
 Windows와 Android의 인증서 가져오기 화면에서 설치할 수 있습니다. 비밀번호는 패키징 중
 임시 파일로만 사용되며 응답이나 로그에 기록하지 않습니다.
 
+### 오류 응답과 자원 제한
+
+입력 검증 오류(`400`)에는 무엇이 잘못되었는지 알려주는 고정 문구를 반환합니다. 서버 오류
+(`5xx`)에는 원인을 드러내지 않는 고정 문구와 요청 ID만 반환하고, `step`의 오류 출력 등 상세
+원인은 같은 요청 ID로 로그에 남깁니다. 요청 본문은 16KiB로 제한하며, `step` 실행 시간과 동시
+발급 수에도 상한이 있습니다.
+
+모든 응답에는 `Content-Security-Policy`, `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`가 붙습니다. 이 때문에
+화면의 CSS와 JavaScript는 HTML 안에 넣지 않고 `static/app.css`, `static/app.js`로 분리되어
+있습니다.
+
+### PKCS#12 형식
+
 `.pfx`와 `.p12`는 동일한 PKCS#12 형식입니다. 포털은 `step certificate p12`의 기본
 PKCS#12 인코딩을 사용합니다.
 
@@ -271,7 +322,8 @@ PFX에는 클라이언트 개인키가 포함되므로 HTTPS로만 제공하고,
 
 ## 운영 감사 로그
 
-포털은 인증서 요청마다 JSON 감사 로그를 표준 출력에 기록합니다. 요청 ID, 접속 IP,
+포털은 인증서 요청마다 JSON 감사 로그를 표준 출력에 기록합니다. 요청 ID는
+`<프로세스 시작 시각(16진수)>-<순번>` 형식이라 재시작 후에도 겹치지 않습니다. 접속 IP,
 User-Agent, 검증된 Access 이메일과 subject, 인증서 CN, 성공 여부, HTTP 상태와 처리 시간이
 포함됩니다. PKCS#12 비밀번호, 개인키, CSR 및 인증서 파일 내용은 기록하지 않습니다.
 `systemd`로 실행한다면 `journalctl -u <서비스명>`에서 조회하고 보존 기간은 journald
@@ -312,3 +364,13 @@ IP와 User-Agent는 기기 식별의 보조 정보이며 인증된 기기 신원
   통제가 필요하면 인증서 일련번호 또는 SAN을 승인 DB와 연동하고 폐기 상태를 검사합니다.
 - 개인키와 CSR을 가능하면 클라이언트 기기에서 생성하고, Windows TPM이나 MDM/SCEP 등
   개인키를 내보내기 어려운 저장 및 발급 방식을 사용합니다.
+
+## 기여와 보안 제보
+
+- 개발 규칙과 커밋 전 확인 사항: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- 취약점 제보: [`SECURITY.md`](SECURITY.md)
+
+## 라이선스
+
+MIT 라이선스([`LICENSE-MIT`](LICENSE-MIT)) 또는 Apache 라이선스 2.0
+([`LICENSE-APACHE`](LICENSE-APACHE)) 중 하나를 선택해 사용할 수 있습니다.
