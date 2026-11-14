@@ -239,7 +239,7 @@ form.addEventListener('submit', async (event) => {
         const fallbackName = purpose === 'vpn' ? `vpn-${commonName}.pfx` : `${commonName}.pfx`;
         download(await response.blob(), filenameFrom(response, fallbackName));
         resetPasswordInputs();
-        showStatus('발급이 끝나 PFX 다운로드를 시작했습니다. 기기에 설치할 때 방금 입력한 비밀번호를 사용하세요.', 'success');
+        showStatus('발급이 끝나 PFX 다운로드를 시작했습니다. 방금 입력한 비밀번호로 설치하고, 설치가 끝나면 다운로드한 파일을 지우세요.', 'success');
     } catch {
         showStatus('서버에 연결하지 못했습니다. 네트워크 상태를 확인하고 다시 시도하세요.', 'error');
     } finally {

@@ -108,15 +108,6 @@ input[aria-invalid="true"] { border-color: var(--danger); }
 .status.success { color: var(--success); }
 .status.error { color: var(--danger); }
 
-.notice {
-    margin-top: 18px;
-    padding: 14px 16px;
-    border-radius: 10px;
-    color: #5c4a18;
-    background: #fff8df;
-    font-size: .88rem;
-    line-height: 1.55;
-}
 
 @media (max-width: 520px) {
     body { padding: 28px 14px; }
