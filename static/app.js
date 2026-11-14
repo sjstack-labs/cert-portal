@@ -43,8 +43,37 @@ function clearStatus() {
     statusArea.className = 'status';
 }
 
+const passwordToggles = form.querySelectorAll('.toggle');
+
+function setPasswordVisible(toggle, visible) {
+    const input = document.getElementById(toggle.getAttribute('aria-controls'));
+    input.type = visible ? 'text' : 'password';
+    toggle.textContent = visible ? '숨김' : '표시';
+    toggle.setAttribute('aria-label', visible ? '비밀번호 숨김' : '비밀번호 표시');
+}
+
+// 비밀번호 입력란을 비우고 가림 상태로 되돌립니다. 기기 이름은 비밀이 아니므로 남겨 둡니다.
+function resetPasswordInputs() {
+    passwordInput.value = '';
+    confirmInput.value = '';
+    passwordToggles.forEach((toggle) => setPasswordVisible(toggle, false));
+}
+
+function clearInvalidMarks() {
+    [commonNameInput, passwordInput, confirmInput].forEach((input) => input.removeAttribute('aria-invalid'));
+}
+
+let currentPurpose = null;
+
 function applyPurpose(purpose) {
     const config = PURPOSES[purpose];
+    // 용도가 바뀌면 다른 용도로 발급되는 실수를 막기 위해 비밀번호를 다시 입력하게 합니다.
+    if (purpose !== currentPurpose) {
+        resetPasswordInputs();
+        clearInvalidMarks();
+        clearStatus();
+        currentPurpose = purpose;
+    }
     vpnCaStep.hidden = purpose !== 'vpn';
     detailsStep.hidden = !config;
     if (!config) {
@@ -53,7 +82,6 @@ function applyPurpose(purpose) {
     detailsTitle.textContent = config.detailsTitle;
     commonNameInput.placeholder = config.placeholder;
     issueButton.textContent = config.buttonLabel;
-    clearStatus();
 }
 
 // 주소 뒤에 #wpa3 또는 #vpn을 붙이면 해당 용도가 선택된 상태로 열립니다.
@@ -74,15 +102,10 @@ form.querySelectorAll('input[name="purpose"]').forEach((radio) => {
 });
 window.addEventListener('hashchange', selectPurposeFromHash);
 
-form.querySelectorAll('.toggle').forEach((toggle) => {
+passwordToggles.forEach((toggle) => {
     const input = document.getElementById(toggle.getAttribute('aria-controls'));
-    toggle.setAttribute('aria-label', '비밀번호 표시');
-    toggle.addEventListener('click', () => {
-        const showing = input.type === 'text';
-        input.type = showing ? 'password' : 'text';
-        toggle.textContent = showing ? '표시' : '숨김';
-        toggle.setAttribute('aria-label', showing ? '비밀번호 표시' : '비밀번호 숨김');
-    });
+    setPasswordVisible(toggle, false);
+    toggle.addEventListener('click', () => setPasswordVisible(toggle, input.type !== 'text'));
 });
 
 function markInvalid(input, invalid) {
@@ -197,8 +220,7 @@ form.addEventListener('submit', async (event) => {
 
         const fallbackName = purpose === 'vpn' ? `vpn-${commonName}.pfx` : `${commonName}.pfx`;
         download(await response.blob(), filenameFrom(response, fallbackName));
-        passwordInput.value = '';
-        confirmInput.value = '';
+        resetPasswordInputs();
         showStatus('발급이 끝나 PFX 다운로드를 시작했습니다. 기기에 설치할 때 방금 입력한 비밀번호를 사용하세요.', 'success');
     } catch {
         showStatus('서버에 연결하지 못했습니다. 네트워크 상태를 확인하고 다시 시도하세요.', 'error');
