@@ -75,9 +75,28 @@ function resetPasswordInputs() {
     passwordToggles.forEach((toggle) => setPasswordVisible(toggle, false));
 }
 
-function clearInvalidMarks() {
-    [commonNameInput, passwordInput, confirmInput].forEach((input) => input.removeAttribute('aria-invalid'));
+const validatedInputs = [commonNameInput, passwordInput, confirmInput];
+
+// 오류 문구는 해당 입력란 바로 아래에 표시하고, aria-describedby로 스크린리더에도 연결합니다.
+function setFieldError(input, message) {
+    const error = document.getElementById(`${input.id}-error`);
+    error.textContent = message || '';
+    error.hidden = !message;
+    if (message) {
+        input.setAttribute('aria-invalid', 'true');
+    } else {
+        input.removeAttribute('aria-invalid');
+    }
 }
+
+function clearFieldErrors() {
+    validatedInputs.forEach((input) => setFieldError(input, null));
+}
+
+// 사용자가 다시 입력하기 시작하면 그 칸의 오류 표시를 지웁니다.
+validatedInputs.forEach((input) => {
+    input.addEventListener('input', () => setFieldError(input, null));
+});
 
 let currentPurpose = null;
 
@@ -86,7 +105,7 @@ function applyPurpose(purpose) {
     // 용도가 바뀌면 다른 용도로 발급되는 실수를 막기 위해 비밀번호를 다시 입력하게 합니다.
     if (purpose !== currentPurpose) {
         resetPasswordInputs();
-        clearInvalidMarks();
+        clearFieldErrors();
         clearStatus();
         currentPurpose = purpose;
     }
@@ -126,35 +145,36 @@ passwordToggles.forEach((toggle) => {
     toggle.addEventListener('click', () => setPasswordVisible(toggle, input.type !== 'text'));
 });
 
-function markInvalid(input, invalid) {
-    input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
+function commonNameError(value) {
+    if (value.length === 0) {
+        return '기기 이름을 입력하세요.';
+    }
+    if (value.length > 253 || !/^[A-Za-z0-9.-]+$/.test(value)) {
+        return '영문자, 숫자, 점, 하이픈만 쓸 수 있습니다.';
+    }
+    const labelsAreValid = value.split('.').every((label) =>
+        label.length >= 1 && label.length <= 63 && !label.startsWith('-') && !label.endsWith('-'));
+    return labelsAreValid ? null : '점이나 하이픈으로 시작하거나 끝날 수 없고, 점을 연달아 쓸 수 없습니다.';
+}
+
+function passwordError(value) {
+    const length = [...value].length;
+    if (length < 8 || length > 128) {
+        return '8~128자로 입력하세요.';
+    }
+    return /[\r\n\0]/.test(value) ? '줄바꿈 문자는 쓸 수 없습니다.' : null;
 }
 
 // 서버와 같은 규칙을 먼저 확인해, 잘못된 입력으로 요청이 나가지 않게 합니다.
+// 잘못된 칸 모두에 문구를 표시하고, 잘못된 입력란 목록을 돌려줍니다.
 function validateInputs() {
-    const commonName = commonNameInput.value.trim();
-    const labelsAreValid = commonName.split('.').every((label) =>
-        label.length >= 1 && label.length <= 63 && !label.startsWith('-') && !label.endsWith('-'));
-    const nameIsValid = commonName.length >= 1 && commonName.length <= 253
-        && /^[A-Za-z0-9.-]+$/.test(commonName) && labelsAreValid;
-    markInvalid(commonNameInput, !nameIsValid);
-    if (!nameIsValid) {
-        return '기기 이름을 확인하세요. 영문자, 숫자, 점, 하이픈만 쓸 수 있고 점이나 하이픈으로 시작하거나 끝날 수 없습니다.';
-    }
-
-    const passwordLength = [...passwordInput.value].length;
-    const passwordIsValid = passwordLength >= 8 && passwordLength <= 128 && !/[\r\n\0]/.test(passwordInput.value);
-    markInvalid(passwordInput, !passwordIsValid);
-    if (!passwordIsValid) {
-        return '비밀번호는 8~128자여야 합니다.';
-    }
-
-    const confirmed = passwordInput.value === confirmInput.value;
-    markInvalid(confirmInput, !confirmed);
-    if (!confirmed) {
-        return '비밀번호 확인이 일치하지 않습니다.';
-    }
-    return null;
+    const errors = [
+        [commonNameInput, commonNameError(commonNameInput.value.trim())],
+        [passwordInput, passwordError(passwordInput.value)],
+        [confirmInput, passwordInput.value === confirmInput.value ? null : '비밀번호가 일치하지 않습니다.'],
+    ];
+    errors.forEach(([input, message]) => setFieldError(input, message));
+    return errors.filter(([, message]) => message).map(([input]) => input);
 }
 
 function filenameFrom(response, fallback) {
@@ -211,9 +231,11 @@ form.addEventListener('submit', async (event) => {
         showStatus('먼저 인증서를 사용할 네트워크를 선택하세요.', 'error');
         return;
     }
-    const invalid = validateInputs();
-    if (invalid) {
-        showStatus(invalid, 'error');
+    const invalidInputs = validateInputs();
+    if (invalidInputs.length > 0) {
+        clearStatus();
+        // 첫 번째 잘못된 칸으로 이동하면 스크린리더가 그 칸의 오류 문구를 함께 읽습니다.
+        invalidInputs[0].focus();
         return;
     }
 

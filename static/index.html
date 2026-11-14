@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>인증서 발급 센터</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/app.css">
     <script src="/app.js" defer></script>
 </head>
@@ -19,7 +20,7 @@
             <label class="purpose-option">
                 <input type="radio" name="purpose" value="wpa3">
                 <span class="purpose-title">Wi-Fi (WPA3 Enterprise)</span>
-                <span class="purpose-hint">회사·집 무선 네트워크 접속용</span>
+                <span class="purpose-hint">무선 네트워크 접속용</span>
             </label>
             <label class="purpose-option">
                 <input type="radio" name="purpose" value="vpn">
@@ -40,8 +41,9 @@
                 <label for="common-name">기기 이름</label>
                 <input id="common-name" name="commonName" type="text" placeholder="예: notebook-01"
                        maxlength="253" pattern="[A-Za-z0-9.\-]+" autocomplete="off" autocapitalize="off"
-                       spellcheck="false" required aria-describedby="common-name-hint">
+                       spellcheck="false" required aria-describedby="common-name-hint common-name-error">
                 <small id="common-name-hint">영문자, 숫자, 점, 하이픈만 사용할 수 있습니다.</small>
+                <small id="common-name-error" class="field-error" hidden></small>
             </div>
 
             <div class="password-pair">
@@ -49,18 +51,21 @@
                     <label for="p12-password">인증서 가져오기 비밀번호</label>
                     <div class="password-row">
                         <input id="p12-password" name="p12Password" type="password" minlength="8" maxlength="128"
-                               autocomplete="new-password" required aria-describedby="p12-password-hint">
+                               autocomplete="new-password" required aria-describedby="p12-password-hint p12-password-error">
                         <button class="toggle" type="button" aria-controls="p12-password">표시</button>
                     </div>
+                    <small id="p12-password-error" class="field-error" hidden></small>
                 </div>
 
                 <div class="form-group">
                     <label for="p12-password-confirm">비밀번호 확인</label>
                     <div class="password-row">
                         <input id="p12-password-confirm" name="p12PasswordConfirm" type="password" minlength="8"
-                               maxlength="128" autocomplete="new-password" required>
+                               maxlength="128" autocomplete="new-password" required
+                               aria-describedby="p12-password-confirm-error">
                         <button class="toggle" type="button" aria-controls="p12-password-confirm">표시</button>
                     </div>
+                    <small id="p12-password-confirm-error" class="field-error" hidden></small>
                 </div>
 
                 <small id="p12-password-hint" class="pair-hint">8~128자. 기기에 인증서를 설치할 때 다시 입력합니다.</small>
