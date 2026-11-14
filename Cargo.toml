@@ -10,10 +10,10 @@ publish = false
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
-jsonwebtoken = "9"
+jsonwebtoken = "11"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-rcgen = { version = "0.13", features = ["x509-parser"] }
-tower-http = { version = "0.6", features = ["fs", "set-header"] }
+rcgen = { version = "0.14", features = ["x509-parser"] }
+tower-http = { version = "0.7", features = ["fs", "set-header"] }
 tempfile = "3"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
